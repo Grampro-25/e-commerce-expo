@@ -1,27 +1,63 @@
-import React from 'react';
-import { View, Text, Button, StyleSheet, ScrollView, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Button, StyleSheet, ScrollView, Alert, ActivityIndicator, Linking } from 'react-native';
 import { useCart } from '../src/context/CartContext';
+
+// Update this to your server URL when running locally or deployed
+const STRIPE_SERVER_URL = 'http://localhost:3000';
 
 export default function CheckoutScreen({ navigation }: any) {
     const { items, total, clearCart } = useCart();
+    const [loading, setLoading] = useState(false);
 
-    const handleCheckout = () => {
-        // TODO: Integrate with Stripe server endpoint
-        Alert.alert(
-            'Checkout',
-            `Total: $${total.toFixed(2)}\n\nStripe integration coming soon!\n\nFor now, this will clear your cart.`,
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Complete Order',
-                    onPress: () => {
-                        clearCart();
-                        navigation.navigate('Home');
-                        Alert.alert('Success', 'Order placed successfully!');
-                    }
+    const handleCheckout = async () => {
+        setLoading(true);
+        try {
+            // Call Stripe server to create checkout session
+            const response = await fetch(`${STRIPE_SERVER_URL}/create-checkout-session`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ items }),
+            });
+
+            const data = await response.json();
+
+            if (data.url) {
+                // Open Stripe Checkout page in browser
+                const supported = await Linking.canOpenURL(data.url);
+                if (supported) {
+                    await Linking.openURL(data.url);
+                    // Clear cart after opening checkout
+                    clearCart();
+                    navigation.navigate('Home');
+                    Alert.alert('Success', 'Checkout opened! Complete payment in browser.');
+                } else {
+                    Alert.alert('Error', 'Cannot open checkout URL');
                 }
-            ]
-        );
+            } else {
+                Alert.alert('Error', data.error || 'Failed to create checkout session');
+            }
+        } catch (error: any) {
+            console.error('Checkout error:', error);
+            Alert.alert(
+                'Connection Error',
+                'Cannot connect to payment server. Make sure the server is running at ' + STRIPE_SERVER_URL,
+                [
+                    { text: 'OK' },
+                    {
+                        text: 'Use Mock Checkout',
+                        onPress: () => {
+                            clearCart();
+                            navigation.navigate('Home');
+                            Alert.alert('Mock Success', 'Order placed (test mode)');
+                        }
+                    }
+                ]
+            );
+        } finally {
+            setLoading(false);
+        }
     };
 
     if (items.length === 0) {
@@ -53,13 +89,20 @@ export default function CheckoutScreen({ navigation }: any) {
                 </View>
 
                 <View style={styles.info}>
-                    <Text style={styles.infoText}>💳 Stripe payment integration coming soon</Text>
-                    <Text style={styles.infoText}>🔐 Secure checkout with SSL encryption</Text>
+                    <Text style={styles.infoText}>💳 Secure payment with Stripe</Text>
+                    <Text style={styles.infoText}>🔐 SSL encrypted checkout</Text>
+                    <Text style={styles.infoText}>💡 Test card: 4242 4242 4242 4242</Text>
                 </View>
 
-                <Button title="Complete Order" onPress={handleCheckout} />
-                <View style={styles.spacing} />
-                <Button title="Back to Cart" onPress={() => navigation.goBack()} color="#666" />
+                {loading ? (
+                    <ActivityIndicator size="large" color="#007AFF" />
+                ) : (
+                    <>
+                        <Button title="Pay with Stripe" onPress={handleCheckout} disabled={loading} />
+                        <View style={styles.spacing} />
+                        <Button title="Back to Cart" onPress={() => navigation.goBack()} color="#666" />
+                    </>
+                )}
             </View>
         </ScrollView>
     );

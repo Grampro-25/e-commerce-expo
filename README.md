@@ -29,14 +29,29 @@ npm run start
 # then press 'a' to open Android emulator, or 'i' for iOS simulator (macOS)
 ```
 
-Stripe Checkout
+4. Set up Stripe Server (for payments)
 
-This starter calls a backend endpoint to create a Stripe Checkout Session:
+```powershell
+cd server
+npm install
+cp .env.example .env
+# Edit .env and add your Stripe secret key from https://dashboard.stripe.com/test/apikeys
+npm start
+```
 
-- Implement an HTTPS endpoint `/create-checkout-session` on your server that creates a Checkout Session with Stripe and returns `{ url: "https://checkout.stripe.com/..." }`.
-- In `src/screens/CheckoutScreen.js` replace `CHECKOUT_ENDPOINT` with your endpoint URL.
+Server runs on http://localhost:3000
 
-Notes
+See `server/README.md` for detailed setup instructions.
 
-- For production and native Stripe integration in React Native, use `@stripe/stripe-react-native` and follow Stripe + Expo EAS Build instructions.
-- This scaffold aims to be runnable with Expo without native Stripe modules; the checkout flow opens a web checkout page.
+## Stripe Checkout
+
+The app includes a complete Stripe integration:
+- Express server in `/server` folder handles payment processing
+- Checkout flow opens Stripe Checkout page in browser
+- Test with card: 4242 4242 4242 4242 (any future date, any CVC)
+
+## Notes
+
+- For production: deploy the server to Railway/Render/Heroku and update `STRIPE_SERVER_URL` in `CheckoutScreen.tsx`
+- For native in-app payments: use `@stripe/stripe-react-native` with Expo EAS Build
+- Current implementation uses web-based Stripe Checkout (works with Expo Go)
