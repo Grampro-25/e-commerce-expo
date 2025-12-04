@@ -1,10 +1,27 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { getProducts } from '../api';
+import { useCart } from '../src/context/CartContext';
 
 export default function HomeScreen({ navigation }: any) {
     const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const { items } = useCart();
+
+    useEffect(() => {
+        navigation.setOptions({
+            headerRight: () => (
+                <TouchableOpacity onPress={() => navigation.navigate('Cart')} style={styles.cartButton}>
+                    <Text style={styles.cartIcon}>🛒</Text>
+                    {items.length > 0 && (
+                        <View style={styles.badge}>
+                            <Text style={styles.badgeText}>{items.length}</Text>
+                        </View>
+                    )}
+                </TouchableOpacity>
+            ),
+        });
+    }, [navigation, items]);
 
     useEffect(() => {
         let mounted = true;
@@ -42,3 +59,10 @@ export default function HomeScreen({ navigation }: any) {
         />
     );
 }
+
+const styles = StyleSheet.create({
+    cartButton: { marginRight: 15, position: 'relative' },
+    cartIcon: { fontSize: 24 },
+    badge: { position: 'absolute', top: -5, right: -5, backgroundColor: 'red', borderRadius: 10, width: 20, height: 20, justifyContent: 'center', alignItems: 'center' },
+    badgeText: { color: 'white', fontSize: 12, fontWeight: 'bold' }
+});
