@@ -11,14 +11,19 @@ export default function HomeScreen({ navigation }: any) {
     useEffect(() => {
         navigation.setOptions({
             headerRight: () => (
-                <TouchableOpacity onPress={() => navigation.navigate('Cart')} style={styles.cartButton}>
-                    <Text style={styles.cartIcon}>🛒</Text>
-                    {items.length > 0 && (
-                        <View style={styles.badge}>
-                            <Text style={styles.badgeText}>{items.length}</Text>
-                        </View>
-                    )}
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <TouchableOpacity onPress={() => navigation.navigate('Profile')} style={styles.headerButton}>
+                        <Text style={styles.headerIcon}>👤</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => navigation.navigate('Cart')} style={styles.cartButton}>
+                        <Text style={styles.cartIcon}>🛒</Text>
+                        {items.length > 0 && (
+                            <View style={styles.badge}>
+                                <Text style={styles.badgeText}>{items.length}</Text>
+                            </View>
+                        )}
+                    </TouchableOpacity>
+                </View>
             ),
         });
     }, [navigation, items]);
@@ -61,6 +66,8 @@ export default function HomeScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
+    headerButton: { marginRight: 15 },
+    headerIcon: { fontSize: 24 },
     cartButton: { marginRight: 15, position: 'relative' },
     cartIcon: { fontSize: 24 },
     badge: { position: 'absolute', top: -5, right: -5, backgroundColor: 'red', borderRadius: 10, width: 20, height: 20, justifyContent: 'center', alignItems: 'center' },

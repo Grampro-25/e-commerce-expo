@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "745808272826",
+    "project_id": "ecommerceexpo-d093e",
+    "storage_bucket": "ecommerceexpo-d093e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:745808272826:android:ac8ec17875852a7593d183",
+        "android_client_info": {
+          "package_name": "com.andriod.ecommerce"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBCaTMlcyhlSSxmewWIND8rCNg7Cz6frVQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
