@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { View, Text, Button, StyleSheet, ScrollView, Alert, ActivityIndicator, Linking } from 'react-native';
 import { useCart } from '../src/context/CartContext';
+import { useAuth } from '../src/context/AuthContext';
+import { createOrder } from '../src/services/orderService';
 
 // Update this to your server URL when running locally or deployed
 const STRIPE_SERVER_URL = 'http://localhost:3000';
 
 export default function CheckoutScreen({ navigation }: any) {
     const { items, total, clearCart } = useCart();
+    const { user } = useAuth();
     const [loading, setLoading] = useState(false);
 
     const handleCheckout = async () => {
@@ -24,11 +27,33 @@ export default function CheckoutScreen({ navigation }: any) {
             const data = await response.json();
 
             if (data.url) {
+                // Save order to Firestore before opening Stripe checkout
+                if (user) {
+                    try {
+                        await createOrder({
+                            userId: user.uid,
+                            items: items.map(item => ({
+                                id: item.id,
+                                name: item.name,
+                                price: item.price,
+                                qty: item.qty,
+                                image: item.image
+                            })),
+                            total,
+                            status: 'pending',
+                            paymentMethod: 'stripe',
+                            stripeSessionId: data.sessionId,
+                            createdAt: new Date().toISOString()
+                        });
+                    } catch (orderError) {
+                        console.warn('Failed to save order:', orderError);
+                    }
+                }
+
                 // Open Stripe Checkout page in browser
                 const supported = await Linking.canOpenURL(data.url);
                 if (supported) {
                     await Linking.openURL(data.url);
-                    // Clear cart after opening checkout
                     clearCart();
                     navigation.navigate('Home');
                     Alert.alert('Success', 'Checkout opened! Complete payment in browser.');
@@ -47,7 +72,28 @@ export default function CheckoutScreen({ navigation }: any) {
                     { text: 'OK' },
                     {
                         text: 'Use Mock Checkout',
-                        onPress: () => {
+                        onPress: async () => {
+                            // Save order in mock mode
+                            if (user) {
+                                try {
+                                    await createOrder({
+                                        userId: user.uid,
+                                        items: items.map(item => ({
+                                            id: item.id,
+                                            name: item.name,
+                                            price: item.price,
+                                            qty: item.qty,
+                                            image: item.image
+                                        })),
+                                        total,
+                                        status: 'completed',
+                                        paymentMethod: 'mock',
+                                        createdAt: new Date().toISOString()
+                                    });
+                                } catch (orderError) {
+                                    console.warn('Failed to save order:', orderError);
+                                }
+                            }
                             clearCart();
                             navigation.navigate('Home');
                             Alert.alert('Mock Success', 'Order placed (test mode)');

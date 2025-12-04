@@ -8,6 +8,7 @@ import CheckoutScreen from './screens/CheckoutScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
+import OrderHistoryScreen from './screens/OrderHistoryScreen';
 import { CartProvider } from './src/context/CartContext';
 import { AuthProvider } from './src/context/AuthContext';
 
@@ -24,6 +25,7 @@ export default function App() {
                         <Stack.Screen name="Cart" component={CartScreen} />
                         <Stack.Screen name="Checkout" component={CheckoutScreen} />
                         <Stack.Screen name="Profile" component={ProfileScreen} />
+                        <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} options={{ title: 'Order History' }} />
                         <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Sign In' }} />
                         <Stack.Screen name="Register" component={RegisterScreen} options={{ title: 'Create Account' }} />
                     </Stack.Navigator>

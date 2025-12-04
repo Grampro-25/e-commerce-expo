@@ -1,9 +1,31 @@
-import React from 'react';
-import { SafeAreaView, View, Text, Button, StyleSheet, ScrollView, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { SafeAreaView, View, Text, Button, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useAuth } from '../src/context/AuthContext';
+import { getOrderStats } from '../src/services/orderService';
 
 export default function ProfileScreen({ navigation }: any) {
     const { user, signOut } = useAuth();
+    const [stats, setStats] = useState({ totalOrders: 0, totalSpent: 0, completedOrders: 0, averageOrderValue: 0 });
+    const [loadingStats, setLoadingStats] = useState(false);
+
+    useEffect(() => {
+        if (user) {
+            loadStats();
+        }
+    }, [user]);
+
+    const loadStats = async () => {
+        if (!user) return;
+        setLoadingStats(true);
+        try {
+            const orderStats = await getOrderStats(user.uid);
+            setStats(orderStats);
+        } catch (error) {
+            console.error('Error loading stats:', error);
+        } finally {
+            setLoadingStats(false);
+        }
+    };
 
     const handleSignOut = async () => {
         Alert.alert(
@@ -66,15 +88,24 @@ export default function ProfileScreen({ navigation }: any) {
 
                 <View style={styles.statsSection}>
                     <Text style={styles.statsTitle}>Quick Stats</Text>
-                    <Text style={styles.statsText}>🛒 Total Orders: 0</Text>
-                    <Text style={styles.statsText}>⭐ Wishlist Items: 0</Text>
-                    <Text style={styles.statsText}>📍 Saved Addresses: 0</Text>
+                    {loadingStats ? (
+                        <ActivityIndicator size="small" color="#007AFF" />
+                    ) : (
+                        <>
+                            <Text style={styles.statsText}>🛒 Total Orders: {stats.totalOrders}</Text>
+                            <Text style={styles.statsText}>💰 Total Spent: ${stats.totalSpent.toFixed(2)}</Text>
+                            <Text style={styles.statsText}>✅ Completed: {stats.completedOrders}</Text>
+                            {stats.totalOrders > 0 && (
+                                <Text style={styles.statsText}>📊 Avg Order: ${stats.averageOrderValue.toFixed(2)}</Text>
+                            )}
+                        </>
+                    )}
                 </View>
 
                 <View style={styles.buttonContainer}>
-                    <Button title="Edit Profile" onPress={() => Alert.alert('Coming Soon', 'Profile editing feature coming soon!')} color="#007AFF" />
+                    <Button title="Order History" onPress={() => navigation.navigate('OrderHistory')} color="#007AFF" />
                     <View style={styles.spacing} />
-                    <Button title="Order History" onPress={() => Alert.alert('Coming Soon', 'Order history feature coming soon!')} color="#5856D6" />
+                    <Button title="Edit Profile" onPress={() => Alert.alert('Coming Soon', 'Profile editing feature coming soon!')} color="#5856D6" />
                     <View style={styles.spacing} />
                     <Button title="Sign Out" onPress={handleSignOut} color="#FF3B30" />
                 </View>
