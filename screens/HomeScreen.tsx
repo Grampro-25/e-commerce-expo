@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, StyleSheet, TextInput } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Animated } from 'react-native';
 import { getProducts } from '../api';
 import { useCart } from '../src/context/CartContext';
 import FilterModal, { FilterOptions } from '../components/FilterModal';
+import ProductCard from '../components/ProductCard';
+import { ProductListSkeleton } from '../components/Skeleton';
 
 export default function HomeScreen({ navigation }: any) {
     const [allProducts, setAllProducts] = useState<any[]>([]);
@@ -117,19 +119,27 @@ export default function HomeScreen({ navigation }: any) {
         return count;
     };
 
-    const renderItem = ({ item }: any) => (
-        <TouchableOpacity onPress={() => navigation?.navigate?.('Product', { product: item })}>
-            <View style={{ padding: 10, borderBottomWidth: 1, borderColor: '#eee', flexDirection: 'row', alignItems: 'center' }}>
-                <Image source={{ uri: item.image }} style={{ width: 80, height: 80, marginRight: 12, resizeMode: 'contain' }} />
-                <View style={{ flex: 1 }}>
-                    <Text numberOfLines={1} style={{ fontSize: 16, fontWeight: '600' }}>{item.title}</Text>
-                    <Text style={{ marginTop: 6 }}>${item.price}</Text>
-                </View>
-            </View>
-        </TouchableOpacity>
-    );
+    const renderItem = ({ item, index }: any) => {
+        const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
-    if (loading) return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator /></View>;
+        React.useEffect(() => {
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 300,
+                delay: index * 50,
+                useNativeDriver: true,
+            }).start();
+        }, []);
+
+        return (
+            <Animated.View style={{ opacity: fadeAnim }}>
+                <ProductCard
+                    product={item}
+                    onPress={() => navigation?.navigate?.('Product', { product: item })}
+                />
+            </Animated.View>
+        );
+    };
 
     const activeFilterCount = getActiveFilterCount();
 
@@ -183,18 +193,24 @@ export default function HomeScreen({ navigation }: any) {
             )}
 
             {/* Product List */}
-            <FlatList
-                data={filteredProducts}
-                keyExtractor={(item: any) => item.id.toString()}
-                renderItem={renderItem}
-                ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
-                        <Text style={styles.emptyIcon}>📦</Text>
-                        <Text style={styles.emptyText}>No products found</Text>
-                        <Text style={styles.emptySubtext}>Try adjusting your filters</Text>
-                    </View>
-                }
-            />
+            {loading ? (
+                <ProductListSkeleton count={5} />
+            ) : (
+                <FlatList
+                    data={filteredProducts}
+                    keyExtractor={(item: any) => item.id.toString()}
+                    renderItem={renderItem}
+                    contentContainerStyle={{ paddingBottom: 20 }}
+                    showsVerticalScrollIndicator={false}
+                    ListEmptyComponent={
+                        <View style={styles.emptyContainer}>
+                            <Text style={styles.emptyIcon}>📦</Text>
+                            <Text style={styles.emptyText}>No products found</Text>
+                            <Text style={styles.emptySubtext}>Try adjusting your filters</Text>
+                        </View>
+                    }
+                />
+            )}
 
             {/* Filter Modal */}
             <FilterModal

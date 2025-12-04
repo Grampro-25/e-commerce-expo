@@ -1,9 +1,9 @@
-// Script to populate Firestore with sample products
-// Run: node scripts/seedProducts.js
+// Script to populate Firestore with realistic shopping products
+// Run: npm run seed-products
 
 const { initializeApp } = require('firebase/app');
-const { getFirestore, collection, addDoc, getDocs } = require('firebase/firestore');
-const axios = require('axios');
+const { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } = require('firebase/firestore');
+const fakeProducts = require('../src/data/fakeProducts').fakeProducts;
 
 // Import your Firebase config
 // Option 1: Use local config if it exists
@@ -13,6 +13,7 @@ try {
     firebaseConfig = localConfig.firebaseConfig;
 } catch (err) {
     // Option 2: Add your config directly here
+    console.error('⚠️  No Firebase config found. Please create src/firebase/firebaseConfig.local.js');
     firebaseConfig = {
         apiKey: "YOUR_API_KEY",
         authDomain: "YOUR_AUTH_DOMAIN",
@@ -26,38 +27,86 @@ try {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+async function clearExistingProducts() {
+    try {
+        console.log('🗑️  Clearing existing products...');
+        const snapshot = await getDocs(collection(db, 'products'));
+        
+        if (snapshot.empty) {
+            console.log('✅ No existing products to clear');
+            return;
+        }
+
+        let deletedCount = 0;
+        for (const docSnapshot of snapshot.docs) {
+            await deleteDoc(doc(db, 'products', docSnapshot.id));
+            deletedCount++;
+        }
+        
+        console.log(`✅ Cleared ${deletedCount} existing products`);
+    } catch (error) {
+        console.error('❌ Error clearing products:', error);
+        throw error;
+    }
+}
+
 async function seedProducts() {
     try {
-        console.log('🔄 Fetching products from Fake Store API...');
-        const response = await axios.get('https://fakestoreapi.com/products');
-        const products = response.data;
+        console.log('🛍️  Starting product seeding with realistic shopping data...\n');
 
-        console.log(`📦 Found ${products.length} products. Adding to Firestore...`);
+        // Clear existing products first
+        await clearExistingProducts();
+
+        console.log(`\n📦 Adding ${fakeProducts.length} realistic products to Firestore...`);
 
         let count = 0;
-        for (const product of products) {
+        const categories = {};
+
+        for (const product of fakeProducts) {
             const productData = {
-                name: product.title,
-                price: product.price,
-                description: product.description,
-                image: product.image,
-                category: product.category,
-                rating: product.rating?.rate || 0,
-                stock: Math.floor(Math.random() * 50) + 10, // Random stock 10-60
-                createdAt: new Date().toISOString()
+                ...product,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
             };
 
             await addDoc(collection(db, 'products'), productData);
             count++;
-            console.log(`✅ Added: ${productData.name}`);
+            
+            // Track categories
+            if (!categories[productData.category]) {
+                categories[productData.category] = 0;
+            }
+            categories[productData.category]++;
+            
+            // Show progress
+            if (count % 5 === 0) {
+                console.log(`   ✓ ${count}/${fakeProducts.length} products added...`);
+            }
         }
 
-        console.log(`\n🎉 Successfully added ${count} products to Firestore!`);
+        console.log(`\n🎉 Successfully added ${count} products to Firestore!\n`);
+        
+        // Show category breakdown
+        console.log('📊 Category Breakdown:');
+        Object.entries(categories).forEach(([cat, num]) => {
+            console.log(`   ${cat}: ${num} products`);
+        });
+
+        // Show featured products count
+        const featuredCount = fakeProducts.filter(p => p.isFeatured).length;
+        const onSaleCount = fakeProducts.filter(p => p.originalPrice).length;
+        const lowStockCount = fakeProducts.filter(p => p.stock < 10).length;
+
+        console.log(`\n✨ Special Items:`);
+        console.log(`   Featured: ${featuredCount} products`);
+        console.log(`   On Sale: ${onSaleCount} products`);
+        console.log(`   Low Stock: ${lowStockCount} products`);
+
         console.log('\n📋 Next steps:');
-        console.log('1. Visit Firebase Console: https://console.firebase.google.com');
-        console.log('2. Go to Firestore Database');
-        console.log('3. You should see the "products" collection with your items');
-        console.log('\n💡 Tip: You can now manage products directly in Firebase Console');
+        console.log('1. Restart your app to see the new products');
+        console.log('2. Visit Firebase Console: https://console.firebase.google.com');
+        console.log('3. Try searching, filtering, and viewing product details');
+        console.log('\n💡 Products include: Electronics, Fashion, Jewelry & more!');
 
         process.exit(0);
     } catch (error) {
@@ -70,29 +119,20 @@ async function seedProducts() {
     }
 }
 
-// Check if products already exist
-async function checkExisting() {
+// Main execution
+async function main() {
     try {
-        const snapshot = await getDocs(collection(db, 'products'));
-        if (!snapshot.empty) {
-            console.log(`\n⚠️  Warning: ${snapshot.size} products already exist in Firestore.`);
-            console.log('This will add MORE products (duplicates).');
-            console.log('\nTo proceed anyway, run: node scripts/seedProducts.js --force');
+        console.log('╔══════════════════════════════════════════╗');
+        console.log('║  E-Commerce Product Seeder 🛍️            ║');
+        console.log('╚══════════════════════════════════════════╝\n');
 
-            if (!process.argv.includes('--force')) {
-                console.log('\n💡 To clear existing products first:');
-                console.log('   - Go to Firebase Console → Firestore');
-                console.log('   - Delete the "products" collection');
-                console.log('   - Then run this script again');
-                process.exit(0);
-            }
-        }
-        seedProducts();
+        // Always clear and reseed for clean data
+        await seedProducts();
     } catch (error) {
-        // Collection doesn't exist yet, proceed with seeding
-        seedProducts();
+        console.error('❌ Fatal error:', error);
+        process.exit(1);
     }
 }
 
-console.log('🚀 Firebase Product Seeder\n');
-checkExisting();
+// Run the script
+main();
