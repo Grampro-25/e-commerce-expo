@@ -21,6 +21,7 @@ npm install
 - Create a Firebase project and Firestore.
 - Recommended: Copy `src/firebase/firebaseConfig.local.example.js` to `src/firebase/firebaseConfig.local.js` and fill in your project's values. The app will automatically load the local file if present.
 - Alternative: Add your Firebase config directly to `src/firebase/firebaseConfig.js` by replacing the placeholder values.
+- **Optional:** Seed products to Firestore: `node scripts/seedProducts.js` (see [FIREBASE_SETUP.md](FIREBASE_SETUP.md))
 
 3. Run the app
 

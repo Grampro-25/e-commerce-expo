@@ -7,7 +7,10 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "seed-products": "node scripts/seedProducts.js",
+    "products:list": "node scripts/manageProducts.js list",
+    "server": "cd server && npm start"
   },
   "dependencies": {
     "expo": "^48.0.0",
